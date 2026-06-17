@@ -344,10 +344,7 @@ export const certificateApi = {
     }).catch(err => handleError(err, options)),
 
   print: (id: number, options?: ApiOptions) =>
-    electronAPI.certificate.update(id, {
-      printCount: (prev: number) => prev + 1,
-      lastPrintDate: new Date().toISOString().split('T')[0],
-    }).catch(err => handleError(err, options)),
+    electronAPI.certificate.print(id).catch(err => handleError(err, options)),
 
   getStatusOptions: () =>
     Promise.resolve([

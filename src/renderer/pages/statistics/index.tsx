@@ -73,7 +73,7 @@ const StatisticsPage: React.FC = () => {
     }
   };
 
-  const monthlyColumns: ColumnsType<{ month: string; count: number }> = [
+  const monthlyColumns: ColumnsType<{ month: string; count: number; passRate?: number }> = [
     {
       title: '月份',
       dataIndex: 'month',
@@ -90,7 +90,7 @@ const StatisticsPage: React.FC = () => {
       title: '合格率',
       key: 'passRate',
       width: 100,
-      render: () => `${(Math.random() * 20 + 80).toFixed(1)}%`,
+      render: (_, record) => `${(record.passRate ?? 0).toFixed(1)}%`,
     },
   ];
 
@@ -98,7 +98,7 @@ const StatisticsPage: React.FC = () => {
     if (!statisticsData?.monthlyInspections) return {};
     const months = statisticsData.monthlyInspections.map((d) => d.month);
     const inspections = statisticsData.monthlyInspections.map((d) => d.count);
-    const passRates = statisticsData.monthlyInspections.map(() => Math.random() * 20 + 80);
+    const passRates = statisticsData.monthlyInspections.map((d) => d.passRate ?? 0);
     const defects = statisticsData.monthlyInspections.map(() => Math.floor(Math.random() * 10) + 1);
 
     return {

@@ -93,6 +93,7 @@ export interface ElectronAPI {
     create: (data: Omit<Certificate, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Certificate | null>;
     update: (id: number, data: Partial<Certificate>) => Promise<Certificate | null>;
     delete: (id: number) => Promise<boolean>;
+    print: (id: number) => Promise<Certificate | null>;
   };
 
   statistics: {

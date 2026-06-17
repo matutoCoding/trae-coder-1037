@@ -152,7 +152,9 @@ const api = {
     update: (id: number, data: Partial<Certificate>): Promise<Certificate | null> =>
       invoke('certificate:update', { id, data }),
     delete: (id: number): Promise<boolean> =>
-      invoke('certificate:delete', id)
+      invoke('certificate:delete', id),
+    print: (id: number): Promise<Certificate | null> =>
+      invoke('certificate:print', id)
   },
 
   statistics: {

@@ -316,7 +316,10 @@ export interface Statistics {
   validCertificates: number;
   expiringCertificates: number;
   expiredCertificates: number;
-  monthlyInspections: { month: string; count: number }[];
+  todayInspections: number;
+  thisMonthInspections: number;
+  thisMonthPassRate: number;
+  monthlyInspections: { month: string; count: number; passRate: number }[];
   defectByLevel: { level: string; count: number }[];
   equipmentByStatus: { status: string; count: number }[];
   inspectionByResult: { result: string; count: number }[];

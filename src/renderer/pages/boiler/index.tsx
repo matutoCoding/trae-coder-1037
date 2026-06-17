@@ -20,6 +20,7 @@ const EquipmentPage: React.FC = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
   const [companyFilter, setCompanyFilter] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -131,7 +132,10 @@ const EquipmentPage: React.FC = () => {
         params.keyword = searchText;
       }
       if (statusFilter) {
-        params.equipmentStatus = statusFilter as EquipmentStatus;
+        params.status = statusFilter as EquipmentStatus;
+      }
+      if (typeFilter) {
+        params.equipmentType = typeFilter;
       }
       if (companyFilter) {
         params.companyId = parseInt(companyFilter);
@@ -242,6 +246,21 @@ const EquipmentPage: React.FC = () => {
             style={{ width: 200 }}
             allowClear
             options={companyOptions}
+          />
+          <Select
+            placeholder="选择设备类型"
+            value={typeFilter || undefined}
+            onChange={setTypeFilter}
+            style={{ width: 150 }}
+            allowClear
+            options={[
+              { value: 'steam', label: '蒸汽锅炉' },
+              { value: 'hot_water', label: '热水锅炉' },
+              { value: 'organic', label: '有机热载体锅炉' },
+              { value: 'power', label: '电站锅炉' },
+              { value: 'pressure_vessel', label: '压力容器' },
+              { value: 'pressure_pipe', label: '压力管道' },
+            ]}
           />
           <Select
             placeholder="选择状态"

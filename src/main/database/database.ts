@@ -59,6 +59,7 @@ class DatabaseManager {
   private SQL: SqlJsStatic | null = null;
   private dbPath: string = '';
   private initPromise: Promise<void> | null = null;
+  private _inTransaction: boolean = false;
 
   private constructor() {}
 
@@ -163,6 +164,7 @@ class DatabaseManager {
 
   private save(): void {
     if (!this.db || !this.dbPath) return;
+    if (this._inTransaction) return;
     const data = this.db.export();
     fs.writeFileSync(this.dbPath, Buffer.from(data));
   }
@@ -189,7 +191,8 @@ class DatabaseManager {
 
   private run(sql: string, params: unknown[] = []): RunResult {
     if (!this.db) throw new Error('Database not initialized');
-    this.db.run(sql, params);
+    const cleanParams = params.map(p => p === undefined ? null : p);
+    this.db.run(sql, cleanParams as Parameters<Database['run']>[1]);
     const changes = this.db.getRowsModified();
     const lastInsertRowid = this.execQueryOne<{ id: number }>('SELECT last_insert_rowid() as id')?.id || 0;
     return { changes, lastInsertRowid };
@@ -197,7 +200,8 @@ class DatabaseManager {
 
   public execQuery<T>(sql: string, params: unknown[] = []): T[] {
     if (!this.db) throw new Error('Database not initialized');
-    const results = this.db.exec(sql, params);
+    const cleanParams = params.map(p => p === undefined ? null : p);
+    const results = this.db.exec(sql, cleanParams as Parameters<Database['exec']>[1]);
     if (results.length === 0) return [];
     return rowsToObjects<T>(results[0].columns, results[0].values);
   }
@@ -216,7 +220,9 @@ class DatabaseManager {
 
     const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
     const result = this.run(sql, values);
-    this.save();
+    if (!this._inTransaction) {
+      this.save();
+    }
     return Number(result.lastInsertRowid);
   }
 
@@ -227,23 +233,30 @@ class DatabaseManager {
     if (!this.db) throw new Error('Database not initialized');
     if (records.length === 0) return [];
 
-    const columns = Object.keys(records[0]) as (keyof TableTypeMap TT)[]ableTypeMap[T])[];
+    const columns = Object.keys(records[0]) as string[];
     const placeholders = columns.map(() => '?').join(', ');
     const sql = `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`;
 
     const ids: number[] = [];
-    this.db.run('BEGIN TRANSACTION');
+    const needOwnTransaction = !this._inTransaction;
+    if (needOwnTransaction) {
+      this.db.run('BEGIN TRANSACTION');
+    }
     try {
       for (const item of records) {
-        const values = columns.map(col => tem[
+        const values = columns.map(col => (item as Record<string, unknown>)[col]);
         const result = this.run(sql, values);
         ids.push(Number(result.lastInsertRowid));
       }
-      this.db.run('COMMIT');
-      this.save();
+      if (needOwnTransaction) {
+        this.db.run('COMMIT');
+        this.save();
+      }
       return ids;
     } catch (error) {
-      this.db.run('ROLLBACK');
+      if (needOwnTransaction) {
+        this.db.run('ROLLBACK');
+      }
       throw error;
     }
   }
@@ -400,6 +413,118 @@ class DatabaseManager {
     };
   }
 
+  public findAllWithOrLike<T extends TableName>(
+    table: T,
+    where: Record<string, unknown> = {},
+    orLikeConditions: string = '',
+    orLikeValues: unknown[] = [],
+    orderBy: string = 'createdAt',
+    order: SortOrder = 'DESC',
+    limit?: number,
+    offset?: number
+  ): TableTypeMap[T][] {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const clauses: string[] = [];
+    const values: unknown[] = [];
+
+    const whereColumns = Object.keys(where);
+    whereColumns.forEach(col => {
+      if (where[col] !== undefined && where[col] !== null && where[col] !== '') {
+        clauses.push(`${col} = ?`);
+        values.push(where[col]);
+      }
+    });
+
+    if (orLikeConditions && orLikeValues.length > 0) {
+      clauses.push(`(${orLikeConditions})`);
+      values.push(...orLikeValues);
+    }
+
+    let sql = `SELECT * FROM ${table}`;
+    if (clauses.length > 0) {
+      sql += ` WHERE ${clauses.join(' AND ')}`;
+    }
+    if (orderBy) {
+      sql += ` ORDER BY ${orderBy} ${order}`;
+    }
+    if (limit) {
+      sql += ` LIMIT ${limit}`;
+    }
+    if (offset) {
+      sql += ` OFFSET ${offset}`;
+    }
+
+    return this.execQuery<TableTypeMap[T]>(sql, values);
+  }
+
+  public countWithOrLike<T extends TableName>(
+    table: T,
+    where: Record<string, unknown> = {},
+    orLikeConditions: string = '',
+    orLikeValues: unknown[] = []
+  ): number {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const clauses: string[] = [];
+    const values: unknown[] = [];
+
+    const whereColumns = Object.keys(where);
+    whereColumns.forEach(col => {
+      if (where[col] !== undefined && where[col] !== null && where[col] !== '') {
+        clauses.push(`${col} = ?`);
+        values.push(where[col]);
+      }
+    });
+
+    if (orLikeConditions && orLikeValues.length > 0) {
+      clauses.push(`(${orLikeConditions})`);
+      values.push(...orLikeValues);
+    }
+
+    let sql = `SELECT COUNT(*) as count FROM ${table}`;
+    if (clauses.length > 0) {
+      sql += ` WHERE ${clauses.join(' AND ')}`;
+    }
+
+    const result = this.execQueryOne<{ count: number }>(sql, values);
+    return result?.count || 0;
+  }
+
+  public paginateWithOrLike<T extends TableName>(
+    table: T,
+    page: number = 1,
+    pageSize: number = 10,
+    where: Record<string, unknown> = {},
+    orLikeConditions: string = '',
+    orLikeValues: unknown[] = [],
+    orderBy: string = 'createdAt',
+    order: SortOrder = 'DESC'
+  ): PaginationResult<TableTypeMap[T]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const offset = (page - 1) * pageSize;
+    const data = this.findAllWithOrLike(
+      table,
+      where,
+      orLikeConditions,
+      orLikeValues,
+      orderBy,
+      order,
+      pageSize,
+      offset
+    );
+
+    const total = this.countWithOrLike(table, where, orLikeConditions, orLikeValues);
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
+  }
+
   public count<T extends TableName>(
     table: T,
     condition: Pick<QueryOptions<TableTypeMap[T]>, 'where' | 'like'> = {}
@@ -458,14 +583,20 @@ class DatabaseManager {
 
   public transaction<T>(fn: () => T): T {
     if (!this.db) throw new Error('Database not initialized');
+    if (this._inTransaction) {
+      return fn();
+    }
+    this._inTransaction = true;
     this.db.run('BEGIN TRANSACTION');
     try {
       const result = fn();
       this.db.run('COMMIT');
+      this._inTransaction = false;
       this.save();
       return result;
     } catch (error) {
       this.db.run('ROLLBACK');
+      this._inTransaction = false;
       throw error;
     }
   }

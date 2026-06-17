@@ -133,6 +133,20 @@ const CertificatePage: React.FC = () => {
       },
     },
     {
+      title: '打印次数',
+      dataIndex: 'printCount',
+      key: 'printCount',
+      width: 100,
+      render: (count: number) => count || 0,
+    },
+    {
+      title: '最后打印日期',
+      dataIndex: 'lastPrintDate',
+      key: 'lastPrintDate',
+      width: 120,
+      render: (date: string) => date || '-',
+    },
+    {
       title: '操作',
       key: 'action',
       width: 260,
@@ -193,7 +207,7 @@ const CertificatePage: React.FC = () => {
       const result = await certificateApi.getList({
         page: pagination.current,
         pageSize: pagination.pageSize,
-        certificateNo: searchText || undefined,
+        keyword: searchText || undefined,
         status: statusFilter as CertificateStatus || undefined,
         certificateType: typeFilter as CertificateType || undefined,
       });

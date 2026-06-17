@@ -29,6 +29,8 @@ const DefectPage: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [equipmentFilter, setEquipmentFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [repairVisible, setRepairVisible] = useState(false);
@@ -178,9 +180,11 @@ const DefectPage: React.FC = () => {
       const result = await defectApi.getList({
         page: pagination.current,
         pageSize: pagination.pageSize,
-        defectLocation: searchText || undefined,
+        keyword: searchText || undefined,
         defectLevel: levelFilter as DefectLevel || undefined,
         status: statusFilter as DefectStatus || undefined,
+        equipmentId: equipmentFilter ? parseInt(equipmentFilter) : undefined,
+        defectType: typeFilter || undefined,
       });
       setData(result.list);
       setTotal(result.total);
@@ -347,12 +351,35 @@ const DefectPage: React.FC = () => {
       <div className="bg-white p-4 rounded-lg mb-4">
         <Space wrap>
           <Input
-            placeholder="搜索缺陷位置"
+            placeholder="搜索关键词"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 200 }}
             prefix={<SearchOutlined />}
             onPressEnter={handleSearch}
+          />
+          <Select
+            placeholder="选择设备"
+            value={equipmentFilter || undefined}
+            onChange={setEquipmentFilter}
+            style={{ width: 200 }}
+            allowClear
+            options={equipmentList.map(e => ({ value: String(e.id), label: e.equipmentName }))}
+          />
+          <Select
+            placeholder="选择缺陷类型"
+            value={typeFilter || undefined}
+            onChange={setTypeFilter}
+            style={{ width: 130 }}
+            allowClear
+            options={[
+              { value: 'corrosion', label: '腐蚀' },
+              { value: 'weld_defect', label: '焊缝缺陷' },
+              { value: 'leakage', label: '泄漏' },
+              { value: 'deformation', label: '变形' },
+              { value: 'crack', label: '裂纹' },
+              { value: 'other', label: '其他' },
+            ]}
           />
           <Select
             placeholder="选择严重程度"

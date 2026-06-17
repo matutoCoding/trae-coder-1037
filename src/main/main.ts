@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, protocol, dialog } from 'electron';
+import { app, BrowserWindow, Menu, shell, dialog } from 'electron';
 import path from 'path';
 import { dbManager } from './database/database';
 import { seedDatabase } from './database/seed';
@@ -22,10 +22,9 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      webSecurity: true,
-      allowRunningInsecureContent: false
-    },
-    icon: path.join(__dirname, '../../public/icon.png')
+      webSecurity: false,
+      allowRunningInsecureContent: true
+    }
   });
 
   mainWindow.once('ready-to-show', () => {
@@ -38,10 +37,17 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    if (parsedUrl.origin !== new URL(VITE_DEV_SERVER_URL).origin && isDev) {
-      event.preventDefault();
-      shell.openExternal(navigationUrl);
+    if (isDev) {
+      try {
+        const parsedUrl = new URL(navigationUrl);
+        const devOrigin = new URL(VITE_DEV_SERVER_URL).origin;
+        if (parsedUrl.origin !== devOrigin) {
+          event.preventDefault();
+          shell.openExternal(navigationUrl);
+        }
+      } catch {
+        // ignore
+      }
     }
   });
 
@@ -244,17 +250,18 @@ function createMenu(): void {
 }
 
 function setupProtocol(): void {
-  protocol.registerFileProtocol('file', (request, callback) => {
-    const filePath = path.normalize(request.url.replace(/^file:\/\//, ''));
-    callback({ path: filePath });
-  });
+  // 预留协议注册位置，目前不需要
 }
 
 app.whenReady().then(async () => {
   try {
     setupProtocol();
     await dbManager.init();
-    await seedDatabase();
+    try {
+      await seedDatabase();
+    } catch (seedError) {
+      console.warn('Seed data initialization warning:', seedError);
+    }
     registerIpcHandlers();
     createWindow();
     createMenu();
