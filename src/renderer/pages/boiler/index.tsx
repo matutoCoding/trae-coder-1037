@@ -251,15 +251,17 @@ const EquipmentPage: React.FC = () => {
             placeholder="选择设备类型"
             value={typeFilter || undefined}
             onChange={setTypeFilter}
-            style={{ width: 150 }}
+            style={{ width: 160 }}
             allowClear
             options={[
-              { value: 'steam', label: '蒸汽锅炉' },
-              { value: 'hot_water', label: '热水锅炉' },
-              { value: 'organic', label: '有机热载体锅炉' },
-              { value: 'power', label: '电站锅炉' },
-              { value: 'pressure_vessel', label: '压力容器' },
-              { value: 'pressure_pipe', label: '压力管道' },
+              { value: '工业锅炉', label: '工业锅炉' },
+              { value: '热水锅炉', label: '热水锅炉' },
+              { value: '电站锅炉', label: '电站锅炉' },
+              { value: '余热锅炉', label: '余热锅炉' },
+              { value: '有机热载体锅炉', label: '有机热载体锅炉' },
+              { value: '蒸汽锅炉', label: '蒸汽锅炉' },
+              { value: '压力容器', label: '压力容器' },
+              { value: '压力管道', label: '压力管道' },
             ]}
           />
           <Select
@@ -318,12 +320,14 @@ const EquipmentPage: React.FC = () => {
             </Form.Item>
             <Form.Item name="equipmentType" label="设备类型" rules={[{ required: true, message: '请选择设备类型' }]}>
               <Select placeholder="请选择设备类型">
-                <Select.Option value="steam">蒸汽锅炉</Select.Option>
-                <Select.Option value="hot_water">热水锅炉</Select.Option>
-                <Select.Option value="organic">有机热载体锅炉</Select.Option>
-                <Select.Option value="power">电站锅炉</Select.Option>
-                <Select.Option value="pressure_vessel">压力容器</Select.Option>
-                <Select.Option value="pressure_pipe">压力管道</Select.Option>
+                <Select.Option value="工业锅炉">工业锅炉</Select.Option>
+                <Select.Option value="热水锅炉">热水锅炉</Select.Option>
+                <Select.Option value="电站锅炉">电站锅炉</Select.Option>
+                <Select.Option value="余热锅炉">余热锅炉</Select.Option>
+                <Select.Option value="有机热载体锅炉">有机热载体锅炉</Select.Option>
+                <Select.Option value="蒸汽锅炉">蒸汽锅炉</Select.Option>
+                <Select.Option value="压力容器">压力容器</Select.Option>
+                <Select.Option value="压力管道">压力管道</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item name="modelSpecification" label="型号规格">

@@ -373,12 +373,14 @@ const DefectPage: React.FC = () => {
             style={{ width: 130 }}
             allowClear
             options={[
-              { value: 'corrosion', label: '腐蚀' },
-              { value: 'weld_defect', label: '焊缝缺陷' },
-              { value: 'leakage', label: '泄漏' },
-              { value: 'deformation', label: '变形' },
-              { value: 'crack', label: '裂纹' },
-              { value: 'other', label: '其他' },
+              { value: '腐蚀', label: '腐蚀' },
+              { value: '焊缝缺陷', label: '焊缝缺陷' },
+              { value: '材质劣化', label: '材质劣化' },
+              { value: '泄漏', label: '泄漏' },
+              { value: '结垢', label: '结垢' },
+              { value: '变形', label: '变形' },
+              { value: '裂纹', label: '裂纹' },
+              { value: '其他', label: '其他' },
             ]}
           />
           <Select
@@ -457,8 +459,17 @@ const DefectPage: React.FC = () => {
             <Form.Item name="defectNo" label="缺陷编号" rules={[{ required: true, message: '请输入缺陷编号' }]}>
               <Input placeholder="请输入缺陷编号" />
             </Form.Item>
-            <Form.Item name="defectType" label="缺陷类型" rules={[{ required: true, message: '请输入缺陷类型' }]}>
-              <Input placeholder="请输入缺陷类型" />
+            <Form.Item name="defectType" label="缺陷类型" rules={[{ required: true, message: '请选择缺陷类型' }]}>
+              <Select placeholder="请选择缺陷类型">
+                <Select.Option value="腐蚀">腐蚀</Select.Option>
+                <Select.Option value="焊缝缺陷">焊缝缺陷</Select.Option>
+                <Select.Option value="材质劣化">材质劣化</Select.Option>
+                <Select.Option value="泄漏">泄漏</Select.Option>
+                <Select.Option value="结垢">结垢</Select.Option>
+                <Select.Option value="变形">变形</Select.Option>
+                <Select.Option value="裂纹">裂纹</Select.Option>
+                <Select.Option value="其他">其他</Select.Option>
+              </Select>
             </Form.Item>
             <Form.Item name="defectLevel" label="严重程度" rules={[{ required: true, message: '请选择严重程度' }]}>
               <Select placeholder="请选择严重程度">

@@ -1,12 +1,13 @@
 import { app, BrowserWindow, Menu, shell, dialog } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { dbManager } from './database/database';
 import { seedDatabase } from './database/seed';
 import { registerIpcHandlers, unregisterIpcHandlers } from './ipcHandlers';
 
 let mainWindow: BrowserWindow | null = null;
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+const isDev = process.env.DEV_MODE === 'true';
 const VITE_DEV_SERVER_URL = 'http://localhost:5173';
 
 function createWindow(): void {
@@ -22,8 +23,8 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      webSecurity: false,
-      allowRunningInsecureContent: true
+      webSecurity: true,
+      allowRunningInsecureContent: false
     }
   });
 
@@ -34,21 +35,6 @@ function createWindow(): void {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
-  });
-
-  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-    if (isDev) {
-      try {
-        const parsedUrl = new URL(navigationUrl);
-        const devOrigin = new URL(VITE_DEV_SERVER_URL).origin;
-        if (parsedUrl.origin !== devOrigin) {
-          event.preventDefault();
-          shell.openExternal(navigationUrl);
-        }
-      } catch {
-        // ignore
-      }
-    }
   });
 
   mainWindow.on('closed', () => {
@@ -74,12 +60,15 @@ function createWindow(): void {
 }
 
 function loadMainWindow(): void {
+  const rendererPath = path.join(__dirname, '../renderer/index.html');
   if (isDev) {
     mainWindow?.loadURL(VITE_DEV_SERVER_URL);
     mainWindow?.webContents.openDevTools();
-  } else {
-    const rendererPath = path.join(__dirname, '../renderer/index.html');
+  } else if (fs.existsSync(rendererPath)) {
     mainWindow?.loadFile(rendererPath);
+  } else {
+    mainWindow?.loadURL(VITE_DEV_SERVER_URL);
+    mainWindow?.webContents.openDevTools();
   }
 }
 

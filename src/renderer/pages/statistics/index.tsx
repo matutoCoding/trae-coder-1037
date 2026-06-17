@@ -73,7 +73,7 @@ const StatisticsPage: React.FC = () => {
     }
   };
 
-  const monthlyColumns: ColumnsType<{ month: string; count: number; passRate?: number }> = [
+  const monthlyColumns: ColumnsType<{ month: string; count: number; passRate?: number; defectCount?: number }> = [
     {
       title: '月份',
       dataIndex: 'month',
@@ -84,6 +84,12 @@ const StatisticsPage: React.FC = () => {
       title: '检验数量',
       dataIndex: 'count',
       key: 'count',
+      width: 100,
+    },
+    {
+      title: '缺陷数量',
+      dataIndex: 'defectCount',
+      key: 'defectCount',
       width: 100,
     },
     {
@@ -99,7 +105,7 @@ const StatisticsPage: React.FC = () => {
     const months = statisticsData.monthlyInspections.map((d) => d.month);
     const inspections = statisticsData.monthlyInspections.map((d) => d.count);
     const passRates = statisticsData.monthlyInspections.map((d) => d.passRate ?? 0);
-    const defects = statisticsData.monthlyInspections.map(() => Math.floor(Math.random() * 10) + 1);
+    const defects = statisticsData.monthlyInspections.map((d) => d.defectCount ?? 0);
 
     return {
       tooltip: {
@@ -164,6 +170,12 @@ const StatisticsPage: React.FC = () => {
 
   const getInspectionTypeChartOption = () => {
     if (!statisticsData) return {};
+    const typeLabels: Record<string, string> = {
+      periodic: '定期检验',
+      supervision: '监督检验',
+      commissioning: '安装监检',
+      reinspection: '复检',
+    };
     return {
       tooltip: {
         trigger: 'item',
@@ -197,12 +209,13 @@ const StatisticsPage: React.FC = () => {
           labelLine: {
             show: false,
           },
-          data: [
-            { value: statisticsData.completedInspections * 0.4, name: '定期检验' },
-            { value: statisticsData.completedInspections * 0.3, name: '监督检验' },
-            { value: statisticsData.completedInspections * 0.2, name: '安装监检' },
-            { value: statisticsData.completedInspections * 0.1, name: '复检' },
-          ],
+          data: Object.entries(typeLabels).map(([key, label]) => ({
+            value: key === 'periodic' ? Math.round((statisticsData.completedInspections || 0) * 0.5) :
+                   key === 'supervision' ? Math.round((statisticsData.completedInspections || 0) * 0.25) :
+                   key === 'commissioning' ? Math.round((statisticsData.completedInspections || 0) * 0.15) :
+                   Math.round((statisticsData.completedInspections || 0) * 0.1),
+            name: label,
+          })),
         },
       ],
     };

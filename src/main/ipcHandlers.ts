@@ -268,13 +268,14 @@ function getStatistics(): Statistics {
     SELECT
       strftime('%Y-%m', planDate) as month,
       COUNT(*) as count,
-      0 as passRate
+      0 as passRate,
+      0 as defectCount
     FROM schedule
     WHERE planDate >= date('now', '-12 months')
     GROUP BY strftime('%Y-%m', planDate)
     ORDER BY month
   `;
-  const monthlyInspectionsRaw = dbManager.execQuery<{ month: string; count: number; passRate: number }>(monthlyInspectionsSql);
+  const monthlyInspectionsRaw = dbManager.execQuery<{ month: string; count: number; passRate: number; defectCount: number }>(monthlyInspectionsSql);
 
   const monthlyReportsSql = `
     SELECT
@@ -288,12 +289,35 @@ function getStatistics(): Statistics {
   `;
   const monthlyReports = dbManager.execQuery<{ month: string; total: number; qualified: number }>(monthlyReportsSql);
 
-  const monthlyInspections = monthlyInspectionsRaw.map(item => {
-    const reportData = monthlyReports.find(r => r.month === item.month);
+  const monthlyDefectsSql = `
+    SELECT
+      strftime('%Y-%m', discoveryDate) as month,
+      COUNT(*) as defectCount
+    FROM defect
+    WHERE discoveryDate >= date('now', '-12 months')
+    GROUP BY strftime('%Y-%m', discoveryDate)
+    ORDER BY month
+  `;
+  const monthlyDefects = dbManager.execQuery<{ month: string; defectCount: number }>(monthlyDefectsSql);
+
+  const allMonths = new Set<string>();
+  monthlyInspectionsRaw.forEach(i => allMonths.add(i.month));
+  monthlyReports.forEach(r => allMonths.add(r.month));
+  monthlyDefects.forEach(d => allMonths.add(d.month));
+
+  const monthlyInspections = Array.from(allMonths).sort().map(month => {
+    const scheduleData = monthlyInspectionsRaw.find(i => i.month === month);
+    const reportData = monthlyReports.find(r => r.month === month);
+    const defectData = monthlyDefects.find(d => d.month === month);
     const passRate = reportData && reportData.total > 0
       ? Math.round(reportData.qualified / reportData.total * 100 * 10) / 10
       : 0;
-    return { ...item, passRate };
+    return {
+      month,
+      count: scheduleData?.count || 0,
+      passRate,
+      defectCount: defectData?.defectCount || 0,
+    };
   });
 
   const defectByLevelSql = `

@@ -319,7 +319,7 @@ export interface Statistics {
   todayInspections: number;
   thisMonthInspections: number;
   thisMonthPassRate: number;
-  monthlyInspections: { month: string; count: number; passRate: number }[];
+  monthlyInspections: { month: string; count: number; passRate: number; defectCount: number }[];
   defectByLevel: { level: string; count: number }[];
   equipmentByStatus: { status: string; count: number }[];
   inspectionByResult: { result: string; count: number }[];
